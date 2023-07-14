@@ -41,6 +41,8 @@
 		$count++;
 		$this->ave->progress($count, $total);
 	}
+	$this->ave->progress($count, $total);
+	unset($files);
 
 	$width = (sqrt(pow($zone['minx']-$zone['maxx'], 2.0))+1) * $sector_size['width'];
 	$height = (sqrt(pow($zone['miny']-$zone['maxy'], 2.0))+1) * $sector_size['height'];
