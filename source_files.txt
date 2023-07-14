@@ -1,0 +1,1 @@
+ui_texture\new_ui_common_forlua\widget\rader\minimap_data_pack

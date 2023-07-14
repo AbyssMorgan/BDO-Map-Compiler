@@ -1,0 +1,98 @@
+<?php
+	$this->ave->title("BDO Map Compiler");
+	$this->ave->echo();
+	$this->ave->echo(" Prepare...");
+
+	$write_pos = true;
+	$input_folder = $this->ave->get_file_path("$this->path/data");
+	$fill_folder = $this->ave->get_file_path("$this->path/fill");
+	$output_folder = $this->ave->get_file_path("$this->path/generated");
+
+	if(!file_exists($input_folder)) $this->ave->mkdir($input_folder);
+	if(!file_exists($output_folder)) $this->ave->mkdir($output_folder);
+
+	$sector_size = ['width' => 128, 'height' => 128];
+	$name_prefix = 'rader_';
+	$name_separator = '_';
+
+	$fill = [0 => [0 => 'rader_0_0.png', 1 => 'rader_0_1.png'], 1 => [0 => 'rader_1_0.png', 1 => 'rader_1_1.png']];
+
+	$data = [];
+
+	$zone = ['minx' => null, 'miny' => null, 'maxx' => null, 'maxy' => null];
+
+	$files = scandir($input_folder);
+
+	$count = 0;
+	$total = count($files);
+	$this->ave->echo();
+	$this->ave->echo(" Load files...");
+	$this->ave->progress($count, $total);
+	foreach($files as $file){
+		if(in_array($file, ["..", ".", ""])) continue;
+		$coords = explode($name_separator, str_replace($name_prefix, "", pathinfo($file, PATHINFO_FILENAME)), 2);
+		$x = $coords[0];
+		$y = $coords[1];
+		if($x < $zone['minx'] || is_null($zone['minx'])) $zone['minx'] = $x;
+		if($x > $zone['maxx'] || is_null($zone['maxx'])) $zone['maxx'] = $x;
+		if($y < $zone['miny'] || is_null($zone['miny'])) $zone['miny'] = $y;
+		if($y > $zone['maxy'] || is_null($zone['maxy'])) $zone['maxy'] = $y;
+		$data[$x][$y] = $file;
+		$count++;
+		$this->ave->progress($count, $total);
+	}
+
+	$width = (sqrt(pow($zone['minx']-$zone['maxx'], 2.0))+1) * $sector_size['width'];
+	$height = (sqrt(pow($zone['miny']-$zone['maxy'], 2.0))+1) * $sector_size['height'];
+
+	if($write_pos){
+		$output_file = $this->ave->get_file_path("$output_folder/BDO_FULL_RAW_".date("Y-m-d")."_C.jpg");
+	} else {
+		$output_file = $this->ave->get_file_path("$output_folder/BDO_FULL_RAW_".date("Y-m-d").".jpg");
+	}
+	$image = imagecreatetruecolor($width, $height);
+	imagefill($image, 0, 0, imagecolorallocatealpha($image, 0, 0, 0, 127));
+	imagesavealpha($image, true);
+
+	$count = 0;
+	$total = ($width/$sector_size['width']) * ($height/$sector_size['height']);
+	$this->ave->echo();
+	$this->ave->echo(" Compile...");
+	$this->ave->progress($count, $total);
+
+	$offset_x = 0;
+	for($x = $zone['minx']; $x <= $zone['maxx']; $x++){
+		$offset_y = 0;
+		for($y = $zone['miny']; $y <= $zone['maxy']; $y++){
+			if(isset($data[$x][$y])){
+				$original = imagecreatefrompng($this->ave->get_file_path("$input_folder/".$data[$x][$y]));
+			} else {
+				$original = imagecreatefrompng($this->ave->get_file_path("$fill_folder/".$fill[abs($x % 2)][abs($y % 2)]));
+			}
+			$dst_x = $offset_x * $sector_size['width'];
+			$dst_y = $height - (($offset_y+1) * $sector_size['height']);
+			$resized = imagecreatetruecolor($sector_size['width'], $sector_size['height']);
+			imagecopyresized($resized, $original, 0, 0, 0, 0, $sector_size['width'], $sector_size['height'], imagesx($original), imagesy($original));
+			imagedestroy($original);
+			imagecopy($image, $resized, $dst_x, $dst_y, 0, 0, $sector_size['width'], $sector_size['height']);
+			imagedestroy($resized);
+			if($write_pos) imagettftext($image, 16, 0, $dst_x + 16, $dst_y + 16, 0xFF0000FF, "arial.ttf", "$x, $y");
+			$offset_y++;
+			$count++;
+			$this->ave->progress($count, $total);
+		}
+		$offset_x++;
+		$count++;
+		$this->ave->progress($count, $total);
+	}
+	$this->ave->progress($count, $total);
+	$this->ave->echo();
+	unset($data);
+
+	$this->ave->echo(" Save image...");
+	if(file_exists($output_file)) $this->ave->unlink($output_file);
+	imagejpeg($image, $output_file);
+	imagedestroy($image);
+
+	$this->ave->pause(" Operation done, press enter to exit");
+?>
