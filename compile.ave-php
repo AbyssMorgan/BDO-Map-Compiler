@@ -1,10 +1,8 @@
 <?php
 	$this->ave->title("BDO Map Compiler");
-	$this->ave->echo();
-	$this->ave->echo(" Prepare...");
 
-	$write_pos = true;
-	$input_folder = $this->ave->get_file_path("$this->path/data");
+	$write_pos = $this->ave->get_confirm(" Write coordinate (Y/N):");
+	$input_folder = $this->ave->get_file_path("B:/BDO");
 	$fill_folder = $this->ave->get_file_path("$this->path/fill");
 	$output_folder = $this->ave->get_file_path("$this->path/generated");
 
@@ -26,9 +24,10 @@
 	$count = 0;
 	$total = count($files);
 	$this->ave->echo();
-	$this->ave->echo(" Load files...");
+	$this->ave->echo(" Load files");
 	$this->ave->progress($count, $total);
 	foreach($files as $file){
+		$count++;
 		if(in_array($file, ["..", ".", ""])) continue;
 		$coords = explode($name_separator, str_replace($name_prefix, "", pathinfo($file, PATHINFO_FILENAME)), 2);
 		$x = $coords[0];
@@ -38,7 +37,6 @@
 		if($y < $zone['miny'] || is_null($zone['miny'])) $zone['miny'] = $y;
 		if($y > $zone['maxy'] || is_null($zone['maxy'])) $zone['maxy'] = $y;
 		$data[$x][$y] = $file;
-		$count++;
 		$this->ave->progress($count, $total);
 	}
 	$this->ave->progress($count, $total);
@@ -46,6 +44,8 @@
 
 	$width = (sqrt(pow($zone['minx']-$zone['maxx'], 2.0))+1) * $sector_size['width'];
 	$height = (sqrt(pow($zone['miny']-$zone['maxy'], 2.0))+1) * $sector_size['height'];
+	$this->ave->echo();
+	$this->ave->echo(" Create empty image $width / $height");
 
 	if($write_pos){
 		$output_file = $this->ave->get_file_path("$output_folder/BDO_FULL_RAW_".date("Y-m-d")."_C.jpg");
@@ -57,9 +57,9 @@
 	imagesavealpha($image, true);
 
 	$count = 0;
-	$total = (($width/$sector_size['width'])-1) * (($height/$sector_size['height'])-1);
+	$total = (($width/$sector_size['width'])) * (($height/$sector_size['height']));
 	$this->ave->echo();
-	$this->ave->echo(" Compile...");
+	$this->ave->echo(" Compile DDS");
 	$this->ave->progress($count, $total);
 
 	$offset_x = 0;
@@ -67,7 +67,10 @@
 		$offset_y = 0;
 		for($y = $zone['miny']; $y <= $zone['maxy']; $y++){
 			if(isset($data[$x][$y])){
-				$original = imagecreatefrompng($this->ave->get_file_path("$input_folder/".$data[$x][$y]));
+				$img = new Imagick($this->ave->get_file_path("$input_folder/".$data[$x][$y]));
+				$img->setImageFormat('png');
+				$original = imagecreatefromstring($img);
+				$img->clear();
 			} else {
 				$original = imagecreatefrompng($this->ave->get_file_path("$fill_folder/".$fill[abs($x % 2)][abs($y % 2)]));
 			}
@@ -84,14 +87,12 @@
 			$this->ave->progress($count, $total);
 		}
 		$offset_x++;
-		$count++;
-		$this->ave->progress($count, $total);
 	}
 	$this->ave->progress($count, $total);
 	$this->ave->echo();
 	unset($data);
 
-	$this->ave->echo(" Save image...");
+	$this->ave->echo(" Save image");
 	if(file_exists($output_file)) $this->ave->unlink($output_file);
 	imagejpeg($image, $output_file);
 	imagedestroy($image);
