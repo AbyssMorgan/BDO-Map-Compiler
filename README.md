@@ -1,3 +1,6 @@
+#### About
+The tool is used to compile the .dds files of the black desert online game map into a single jpg file
+
 #### Requirements
 - Operating system: Windows 7, 8, 8.1, 10, 11
 - Microsoft Visual C++ Redistributable for Visual Studio 2019
