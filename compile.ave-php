@@ -1,4 +1,6 @@
 <?php
+	use App\Services\IniFile;
+	
 	$this->ave->title("BDO Map Compiler");
 	
 	$config = new IniFile("$this->path/config.ini");
