@@ -1,11 +1,24 @@
 <?php
 	$this->ave->title("BDO Map Compiler");
+	
+	$config = new IniFile("$this->path/config.ini");
 
 	$this->ave->echo();
 	$write_pos = $this->ave->get_confirm(" Write coordinates (Y/N): ");
-	$input_folder = $this->ave->get_file_path("$this->path/dds");
+	
+	if(!is_null($config->get('DDS_PATH'))){
+		$input_folder = $this->ave->get_file_path($config->get('DDS_PATH'));
+	} else {
+		$input_folder = $this->ave->get_file_path("$this->path/dds");
+	}
+	
+	if(!is_null($config->get('OUTPUT_FOLDER'))){
+		$output_folder = $this->ave->get_file_path($config->get('OUTPUT_FOLDER'));
+	} else {
+		$output_folder = $this->ave->get_file_path("$this->path/generated");
+	}
+	
 	$fill_folder = $this->ave->get_file_path("$this->path/fill");
-	$output_folder = $this->ave->get_file_path("$this->path/generated");
 
 	if(!file_exists($input_folder)) $this->ave->mkdir($input_folder);
 	if(!file_exists($output_folder)) $this->ave->mkdir($output_folder);
