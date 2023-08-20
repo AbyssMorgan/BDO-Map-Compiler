@@ -2,8 +2,8 @@
 	$this->ave->title("BDO Map Compiler");
 
 	$this->ave->echo();
-	$write_pos = $this->ave->get_confirm(" Write coordinate (Y/N):");
-	$input_folder = $this->ave->get_file_path("B:/BDO_EU");
+	$write_pos = $this->ave->get_confirm(" Write coordinates (Y/N): ");
+	$input_folder = $this->ave->get_file_path("$this->path/dds");
 	$fill_folder = $this->ave->get_file_path("$this->path/fill");
 	$output_folder = $this->ave->get_file_path("$this->path/generated");
 
@@ -45,7 +45,6 @@
 
 	$width = (sqrt(pow($zone['minx']-$zone['maxx'], 2.0))+1) * $sector_size['width'];
 	$height = (sqrt(pow($zone['miny']-$zone['maxy'], 2.0))+1) * $sector_size['height'];
-	$this->ave->echo();
 	$this->ave->echo(" Create empty image $width"."x".$height);
 
 	if($write_pos){
@@ -59,7 +58,6 @@
 
 	$count = 0;
 	$total = (($width/$sector_size['width'])) * (($height/$sector_size['height']));
-	$this->ave->echo();
 	$this->ave->echo(" Compile DDS");
 	$this->ave->progress($count, $total);
 
