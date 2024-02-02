@@ -7,6 +7,7 @@
 
 	$this->ave->echo();
 	$write_pos = $this->ave->get_confirm(" Write coordinates (Y/N): ");
+	$fill_empty_position = $this->ave->get_confirm(" Fill empty position via water (Y/N): ");
 	
 	if(!is_null($config->get('DDS_PATH'))){
 		$input_folder = $this->ave->get_file_path($config->get('DDS_PATH'));
@@ -85,16 +86,20 @@
 				$img->setImageFormat('png');
 				$original = imagecreatefromstring($img);
 				$img->clear();
+				$draw = true;
 			} else {
 				$original = imagecreatefrompng($this->ave->get_file_path("$fill_folder/".$fill[abs($x % 2)][abs($y % 2)]));
+				$draw = $fill_empty_position;
 			}
 			$dst_x = $offset_x * $sector_size['width'];
 			$dst_y = $height - (($offset_y+1) * $sector_size['height']);
-			$resized = imagecreatetruecolor($sector_size['width'], $sector_size['height']);
-			imagecopyresized($resized, $original, 0, 0, 0, 0, $sector_size['width'], $sector_size['height'], imagesx($original), imagesy($original));
-			imagedestroy($original);
-			imagecopy($image, $resized, $dst_x, $dst_y, 0, 0, $sector_size['width'], $sector_size['height']);
-			imagedestroy($resized);
+			if($draw){
+				$resized = imagecreatetruecolor($sector_size['width'], $sector_size['height']);
+				imagecopyresized($resized, $original, 0, 0, 0, 0, $sector_size['width'], $sector_size['height'], imagesx($original), imagesy($original));
+				imagedestroy($original);
+				imagecopy($image, $resized, $dst_x, $dst_y, 0, 0, $sector_size['width'], $sector_size['height']);
+				imagedestroy($resized);
+			}
 			if($write_pos) imagettftext($image, 16, 0, $dst_x + 16, $dst_y + 16, 0xFF0000FF, "arial.ttf", "$x, $y");
 			$offset_y++;
 			$count++;
