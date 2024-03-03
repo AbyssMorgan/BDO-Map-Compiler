@@ -1,5 +1,5 @@
 <?php
-	use App\Services\IniFile;
+	use AveCore\IniFile;
 	
 	$this->ave->title("BDO Map Compiler");
 	
@@ -112,7 +112,7 @@
 	unset($data);
 
 	$this->ave->echo(" Save image");
-	if(file_exists($output_file)) $this->ave->unlink($output_file);
+	if(file_exists($output_file)) $this->ave->delete($output_file);
 	imagejpeg($image, $output_file);
 	imagedestroy($image);
 
