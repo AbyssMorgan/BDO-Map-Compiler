@@ -6,7 +6,7 @@
 
 	class BdoMapCompiler {
 
-		private string $name = "[BlackDesertOnline] Map Compiler";
+		private string $name = "[BlackDesertOnline] Map compiler";
 		private Script $core;
 		private string $path;
 		private IniFile $config;
