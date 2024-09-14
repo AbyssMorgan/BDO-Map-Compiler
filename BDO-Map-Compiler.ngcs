@@ -6,7 +6,7 @@
 
 	class BdoMapCompiler {
 
-		private string $name = "BDO Map Compiler";
+		private string $name = "[BlackDesertOnline] Map Compiler";
 		private Script $core;
 		private string $path;
 		private IniFile $config;
@@ -14,7 +14,7 @@
 		public function __construct(Script $core, string $path){
 			$this->core = $core;
 			$this->path = $path;
-			$this->core->set_tool($this->name);
+			$this->core->title($this->name);
 			$this->config = new IniFile("$this->path/config.ini");
 		}
 
