@@ -4,8 +4,8 @@ The tool is used to compile the .dds files of the black desert online game map i
 #### Requirements
 - Operating system: Windows 7, 8, 8.1, 10, 11
 - Microsoft Visual C++ Redistributable for Visual Studio 2019
-- AVE-PHP + AVE-UTILITIES https://github.com/AbyssMorgan/AVE-PHP/releases
-- Installed .ave-php script support (Run AVE-PHP as administrator then go to Help \> Install .ave-php script support)
+- NGC-TOOLKIT + NGC-UTILITIES https://github.com/AbyssMorgan/NGC-TOOLKIT/releases
+- Installed .ngcs script support (Run NGC-TOOLKIT as administrator then go to Help \> Install .ngcs script support)
 - Minimum 4GB free RAM
 
 #### How to use

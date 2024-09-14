@@ -1,0 +1,141 @@
+@AppType NGC_SCRIPT 2.3.0
+<?php
+	declare(strict_types=1);
+
+	use NGC\Core\IniFile;
+
+	class BdoMapCompiler {
+
+		private string $name = "BDO Map Compiler";
+		private Script $core;
+		private string $path;
+		private IniFile $config;
+
+		public function __construct(Script $core, string $path){
+			$this->core = $core;
+			$this->path = $path;
+			$this->core->set_tool($this->name);
+			$this->config = new IniFile("$this->path/config.ini");
+		}
+
+		public function execute() : bool {
+			$this->core->echo();
+			$write_pos = $this->core->get_confirm(" Write coordinates (Y/N): ");
+			$fill_empty_position = $this->core->get_confirm(" Fill empty position via water (Y/N): ");
+			
+			if(!is_null($this->config->get('DDS_PATH'))){
+				$input_folder = $this->core->get_path($this->config->get('DDS_PATH'));
+			} else {
+				$input_folder = $this->core->get_path("$this->path/dds");
+			}
+			
+			if(!is_null($this->config->get('OUTPUT_FOLDER'))){
+				$output_folder = $this->core->get_path($this->config->get('OUTPUT_FOLDER'));
+			} else {
+				$output_folder = $this->core->get_path("$this->path/generated");
+			}
+			
+			$fill_folder = $this->core->get_path("$this->path/fill");
+
+			if(!file_exists($input_folder)) $this->core->mkdir($input_folder);
+			if(!file_exists($output_folder)) $this->core->mkdir($output_folder);
+
+			$sector_size = ['width' => 128, 'height' => 128];
+			$name_prefix = 'rader_';
+			$name_separator = '_';
+
+			$fill = [0 => [0 => 'rader_0_0.png', 1 => 'rader_0_1.png'], 1 => [0 => 'rader_1_0.png', 1 => 'rader_1_1.png']];
+
+			$data = [];
+
+			$zone = ['minx' => null, 'miny' => null, 'maxx' => null, 'maxy' => null];
+
+			$files = scandir($input_folder);
+
+			$count = 0;
+			$total = count($files);
+			$this->core->echo();
+			$this->core->echo(" Load files");
+			$this->core->progress($count, $total);
+			foreach($files as $file){
+				$count++;
+				if(in_array($file, ["..", ".", ""])) continue;
+				$coords = explode($name_separator, str_replace($name_prefix, "", pathinfo($file, PATHINFO_FILENAME)), 2);
+				$x = $coords[0];
+				$y = $coords[1];
+				if($x < $zone['minx'] || is_null($zone['minx'])) $zone['minx'] = $x;
+				if($x > $zone['maxx'] || is_null($zone['maxx'])) $zone['maxx'] = $x;
+				if($y < $zone['miny'] || is_null($zone['miny'])) $zone['miny'] = $y;
+				if($y > $zone['maxy'] || is_null($zone['maxy'])) $zone['maxy'] = $y;
+				$data[$x][$y] = $file;
+				$this->core->progress($count, $total);
+			}
+			$this->core->progress($count, $total);
+			unset($files);
+
+			$width = (sqrt(pow($zone['minx']-$zone['maxx'], 2.0))+1) * $sector_size['width'];
+			$height = (sqrt(pow($zone['miny']-$zone['maxy'], 2.0))+1) * $sector_size['height'];
+			$this->core->echo(" Create empty image $width"."x".$height);
+
+			if($write_pos){
+				$output_file = $this->core->get_path("$output_folder/BDO_FULL_RAW_".date("Y-m-d")."_C.jpg");
+			} else {
+				$output_file = $this->core->get_path("$output_folder/BDO_FULL_RAW_".date("Y-m-d").".jpg");
+			}
+			$image = imagecreatetruecolor((int)$width, (int)$height);
+			imagefill($image, 0, 0, imagecolorallocatealpha($image, 0, 0, 0, 127));
+			imagesavealpha($image, true);
+
+			$count = 0;
+			$total = (($width/$sector_size['width'])) * (($height/$sector_size['height']));
+			$this->core->echo(" Compile DDS");
+			$this->core->progress($count, $total);
+
+			$offset_x = 0;
+			for($x = $zone['minx']; $x <= $zone['maxx']; $x++){
+				$offset_y = 0;
+				for($y = $zone['miny']; $y <= $zone['maxy']; $y++){
+					if(isset($data[$x][$y])){
+						$img = new Imagick($this->core->get_path("$input_folder/".$data[$x][$y]));
+						$img->setImageFormat('png');
+						$original = imagecreatefromstring($img);
+						$img->clear();
+						$draw = true;
+					} else {
+						$original = imagecreatefrompng($this->core->get_path("$fill_folder/".$fill[abs($x % 2)][abs($y % 2)]));
+						$draw = $fill_empty_position;
+					}
+					$dst_x = $offset_x * $sector_size['width'];
+					$dst_y = $height - ($offset_y + 1) * $sector_size['height'];
+					if($draw){
+						$resized = imagecreatetruecolor($sector_size['width'], $sector_size['height']);
+						imagecopyresized($resized, $original, 0, 0, 0, 0, $sector_size['width'], $sector_size['height'], imagesx($original), imagesy($original));
+						imagedestroy($original);
+						imagecopy($image, $resized, $dst_x, (int)$dst_y, 0, 0, $sector_size['width'], $sector_size['height']);
+						imagedestroy($resized);
+					}
+					if($write_pos) imagettftext($image, 16, 0, $dst_x + 16, (int)$dst_y + 16, 0xFF0000FF, "arial.ttf", "$x, $y");
+					$offset_y++;
+					$count++;
+					$this->core->progress($count, $total);
+				}
+				$offset_x++;
+			}
+			$this->core->progress($count, $total);
+			$this->core->echo();
+			unset($data);
+
+			$this->core->echo(" Save image");
+			if(file_exists($output_file)) $this->core->delete($output_file);
+			imagejpeg($image, $output_file);
+			imagedestroy($image);
+
+			$this->core->pause(" Operation done, press enter to exit");
+			return true;
+		}
+
+	}
+	
+	$tool = new BdoMapCompiler($this->core, $this->path);
+	$tool->execute();
+?>

@@ -1,0 +1,10 @@
+{
+	"files.associations": {
+		"*.ngcs": "php",
+	},
+	"editor.insertSpaces": false,
+	"php.version": "8.3",
+	"php.problems.exclude": {
+		"/": [7001,7103]
+	}
+}
