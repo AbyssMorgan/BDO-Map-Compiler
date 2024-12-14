@@ -1,4 +1,4 @@
-@AppType NGC_SCRIPT 2.3.0
+@AppType NGC_SCRIPT 2.3.3
 <?php
 	declare(strict_types=1);
 
